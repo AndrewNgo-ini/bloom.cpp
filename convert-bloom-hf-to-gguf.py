@@ -100,7 +100,7 @@ print("gguf: get model metadata")
 
 block_count = hparams["n_layer"]
 
-gguf_writer.add_name("Bloomz")
+gguf_writer.add_name("Bloom")
 gguf_writer.add_context_length(hparams["seq_length"]) # not in config.json
 gguf_writer.add_embedding_length(hparams["n_embed"])
 gguf_writer.add_feed_forward_length(4 * hparams["n_embed"])
@@ -178,7 +178,7 @@ for part_name in part_names:
         ctx = contextlib.nullcontext(torch.load(dir_model / part_name, map_location="cpu"))
 
     #with ctx as model_part:
-    model = transformers.AutoModelForCausalLM.from_pretrained("/Users/ngohieu/llama.cpp/models/bloomz-560m")
+    model = transformers.AutoModelForCausalLM.from_pretrained(dir_model)
     model_part = model.state_dict()
     for name in model_part.keys():
         if name == "word_embeddings_layernorm.weight" or name == "word_embeddings_layernorm.bias" \
