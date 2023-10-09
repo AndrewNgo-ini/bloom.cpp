@@ -88,10 +88,12 @@ class MODEL_ARCH(IntEnum):
     PERSIMMON     : int = auto()
     REFACT        : int = auto()
     BERT          : int = auto()
+    BLOOM         : int = auto()
 
 
 class MODEL_TENSOR(IntEnum):
     TOKEN_EMBD   : int = auto()
+    TOKEN_EMBD_NORM: int = auto()
     TOKEN_TYPES  : int = auto()
     POS_EMBD     : int = auto()
     OUTPUT       : int = auto()
@@ -125,10 +127,12 @@ MODEL_ARCH_NAMES: dict[MODEL_ARCH, str] = {
     MODEL_ARCH.PERSIMMON:      "persimmon",
     MODEL_ARCH.REFACT:         "refact",
     MODEL_ARCH.BERT:           "bert",
+    MODEL_ARCH.BLOOM:          "bloom",
 }
 
 TENSOR_NAMES: dict[MODEL_TENSOR, str] = {
     MODEL_TENSOR.TOKEN_EMBD:    "token_embd",
+    MODEL_TENSOR.TOKEN_EMBD_NORM: "token_embd_norm",
     MODEL_TENSOR.TOKEN_TYPES:   "token_types",
     MODEL_TENSOR.POS_EMBD:      "position_embd",
     MODEL_TENSOR.OUTPUT_NORM:   "output_norm",
@@ -282,6 +286,17 @@ MODEL_TENSORS: dict[MODEL_ARCH, list[MODEL_TENSOR]] = {
         MODEL_TENSOR.FFN_DOWN,
         MODEL_TENSOR.FFN_UP,
     ],
+    MODEL_ARCH.BLOOM: [
+        MODEL_TENSOR.TOKEN_EMBD,
+        MODEL_TENSOR.OUTPUT_NORM,
+        MODEL_TENSOR.OUTPUT,
+        MODEL_TENSOR.ATTN_NORM,
+        MODEL_TENSOR.ATTN_QKV,
+        MODEL_TENSOR.ATTN_OUT,
+        MODEL_TENSOR.FFN_NORM,
+        MODEL_TENSOR.FFN_DOWN,
+        MODEL_TENSOR.FFN_UP,
+    ],
     MODEL_ARCH.GPT2: [
         # TODO
     ],
@@ -300,6 +315,9 @@ MODEL_TENSOR_SKIP: dict[MODEL_ARCH, list[MODEL_TENSOR]] = {
     ],
     MODEL_ARCH.PERSIMMON: [
         MODEL_TENSOR.ROPE_FREQS,
+    ],
+    MODEL_ARCH.BLOOM: [
+        MODEL_TENSOR.TOKEN_EMBD_NORM
     ]
 }
 
@@ -310,7 +328,7 @@ class TensorNameMap:
         MODEL_TENSOR.TOKEN_EMBD: (
             "gpt_neox.embed_in",                        # gptneox
             "transformer.wte",                          # gpt2 gpt-j mpt refact
-            "transformer.word_embeddings",              # falcon
+            "transformer.word_embeddings",              # falcon bloom
             "model.embed_tokens",                       # llama-hf
             "tok_embeddings",                           # llama-pth
             "embeddings.word_embeddings",               # bert
@@ -331,7 +349,7 @@ class TensorNameMap:
         # Output
         MODEL_TENSOR.OUTPUT: (
             "embed_out",                # gptneox
-            "lm_head",                  # gpt2 mpt falcon llama-hf baichuan
+            "lm_head",                  # gpt2 mpt falcon llama-hf baichuan bloom
             "output",                   # llama-pth
             "word_embeddings_for_head", # persimmon
         ),
@@ -339,7 +357,7 @@ class TensorNameMap:
         # Output norm
         MODEL_TENSOR.OUTPUT_NORM: (
             "gpt_neox.final_layer_norm",              # gptneox
-            "transformer.ln_f",                       # gpt2 gpt-j falcon
+            "transformer.ln_f",                       # gpt2 gpt-j falcon bloom
             "model.norm",                             # llama-hf baichuan
             "norm",                                   # llama-pth
             "embeddings.LayerNorm",                   # bert
@@ -360,7 +378,7 @@ class TensorNameMap:
             "gpt_neox.layers.{bid}.input_layernorm",               # gptneox
             "transformer.h.{bid}.ln_1",                            # gpt2 gpt-j refact
             "transformer.blocks.{bid}.norm_1",                     # mpt
-            "transformer.h.{bid}.input_layernorm",                 # falcon7b
+            "transformer.h.{bid}.input_layernorm",                 # falcon7b bloom
             "transformer.h.{bid}.ln_mlp",                          # falcon40b
             "model.layers.{bid}.input_layernorm",                  # llama-hf
             "layers.{bid}.attention_norm",                         # llama-pth
@@ -378,7 +396,7 @@ class TensorNameMap:
             "gpt_neox.layers.{bid}.attention.query_key_value",                    # gptneox
             "transformer.h.{bid}.attn.c_attn",                                    # gpt2
             "transformer.blocks.{bid}.attn.Wqkv",                                 # mpt
-            "transformer.h.{bid}.self_attention.query_key_value",                 # falcon
+            "transformer.h.{bid}.self_attention.query_key_value",                 # falcon bloom
             "language_model.encoder.layers.{bid}.self_attention.query_key_value", # persimmon
         ),
 
@@ -411,7 +429,7 @@ class TensorNameMap:
             "gpt_neox.layers.{bid}.attention.dense",                   # gptneox
             "transformer.h.{bid}.attn.c_proj",                         # gpt2 refact
             "transformer.blocks.{bid}.attn.out_proj",                  # mpt
-            "transformer.h.{bid}.self_attention.dense",                # falcon
+            "transformer.h.{bid}.self_attention.dense",                # falcon bloom
             "model.layers.{bid}.self_attn.o_proj",                     # llama-hf
             "layers.{bid}.attention.wo",                               # llama-pth
             "encoder.layer.{bid}.attention.output.dense",              # bert
@@ -434,6 +452,7 @@ class TensorNameMap:
             "layers.{bid}.ffn_norm",                                        # llama-pth
             "encoder.layer.{bid}.output.LayerNorm",                         # bert
             "language_model.encoder.layers.{bid}.post_attention_layernorm", # persimmon
+            "transformer.h.{bid}.post_attention_layernorm",                 # bloom
         ),
 
         # Feed-forward up
@@ -441,7 +460,7 @@ class TensorNameMap:
             "gpt_neox.layers.{bid}.mlp.dense_h_to_4h",               # gptneox
             "transformer.h.{bid}.mlp.c_fc",                          # gpt2
             "transformer.blocks.{bid}.ffn.up_proj",                  # mpt
-            "transformer.h.{bid}.mlp.dense_h_to_4h",                 # falcon
+            "transformer.h.{bid}.mlp.dense_h_to_4h",                 # falcon bloom
             "model.layers.{bid}.mlp.up_proj",                        # llama-hf refact
             "layers.{bid}.feed_forward.w3",                          # llama-pth
             "encoder.layer.{bid}.intermediate.dense",                # bert
@@ -460,7 +479,7 @@ class TensorNameMap:
             "gpt_neox.layers.{bid}.mlp.dense_4h_to_h",               # gptneox
             "transformer.h.{bid}.mlp.c_proj",                        # gpt2 refact
             "transformer.blocks.{bid}.ffn.down_proj",                # mpt
-            "transformer.h.{bid}.mlp.dense_4h_to_h",                 # falcon
+            "transformer.h.{bid}.mlp.dense_4h_to_h",                 # falcon bloom
             "model.layers.{bid}.mlp.down_proj",                      # llama-hf
             "layers.{bid}.feed_forward.w2",                          # llama-pth
             "encoder.layer.{bid}.output.dense",                      # bert
