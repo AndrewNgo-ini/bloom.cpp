@@ -5276,6 +5276,10 @@ static struct ggml_cgraph * llama_build_graph(
             {
                 result = llm_build_refact(lctx, batch);
             } break;
+        case LLM_ARCH_BLOOM:
+            {
+                result = llm_build_bloom(lctx, batch);
+            } break;
         default:
             GGML_ASSERT(false);
     }
