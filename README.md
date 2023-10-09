@@ -15,9 +15,10 @@ make
 ```
 
 ## Download GGUF model format
-
+I have converted these model
 ```bash
 https://huggingface.co/hiieu/bloomz-560m-GGUF
+https://huggingface.co/hiieu/bloomz-7b1-GGUF
 ```
 
 ### Convert weights
